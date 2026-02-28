@@ -1,0 +1,23 @@
+[project]
+name = "ml-sharp"
+version = "1.0.0"
+description = "Sharp Monocular View Synthesis in Less Than a Second"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "gradio==6.1.0",
+    "huggingface-hub>=1.2.3",
+    "sharp",
+    "spaces==0.44.0",
+    "torch>=2.9.1",
+    "torchvision>=0.24.1",
+]
+
+[tool.uv.sources]
+sharp = { git = "https://github.com/apple/ml-sharp.git", rev = "cdb4ddc6796402bee5487c7312260f2edd8bd5f0" }
+
+[dependency-groups]
+dev = [
+    "hf>=1.2.3",
+    "ruff>=0.14.9",
+]

@@ -1,0 +1,6 @@
+gradio==6.1.0
+spaces==0.44.0
+huggingface_hub>=1.2.3
+torch
+torchvision
+sharp @ git+https://github.com/apple/ml-sharp.git@cdb4ddc6796402bee5487c7312260f2edd8bd5f0

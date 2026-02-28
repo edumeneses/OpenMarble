@@ -1,0 +1,50 @@
+[
+  {
+    "label": "Bathroom",
+    "image": "Booster_train_balanced_Bathroom_camera_00_im0_png_00000_0000-0001.jpg",
+    "video": "Booster_train_balanced_Bathroom_camera_00_im0_png_00000_0000-0001.mp4",
+    "ply": "Booster_train_balanced_Bathroom_camera_00_im0_png_00000_0000-0001.ply"
+  },
+  {
+    "label": "Courtyard",
+    "image": "ETH3D_courtyard_00000_0000-0001.jpg",
+    "video": "ETH3D_courtyard_00000_0000-0001.mp4",
+    "ply": "ETH3D_courtyard_00000_0000-0001.ply"
+  },
+  {
+    "label": "Bicycle",
+    "image": "Middlebury_49b2bcfdd9_000_0000-0001.jpg",
+    "video": "Middlebury_49b2bcfdd9_000_0000-0001.mp4",
+    "ply": "Middlebury_49b2bcfdd9_000_0000-0001.ply"
+  },
+  {
+    "label": "Interior",
+    "image": "ScanNetPP_09c1414f1b_00000_0000-0001.jpg",
+    "video": "ScanNetPP_09c1414f1b_00000_0000-0001.mp4",
+    "ply": "ScanNetPP_09c1414f1b_00000_0000-0001.ply"
+  },
+  {
+    "label": "Church",
+    "image": "TanksAndTemples_Church_00022_0000-0002.jpg",
+    "video": "TanksAndTemples_Church_00022_0000-0002.mp4",
+    "ply": "TanksAndTemples_Church_00022_0000-0002.ply"
+  },
+  {
+    "label": "Flowers",
+    "image": "Unsplash_-591oIJnyEQ_0000-0001.jpg",
+    "video": "Unsplash_-591oIJnyEQ_0000-0001.mp4",
+    "ply": "Unsplash_-591oIJnyEQ_0000-0001.ply"
+  },
+  {
+    "label": "Horse",
+    "image": "Unsplash_SharpPaperVideo_-B_lu05yfgE_0000-0001.jpg",
+    "video": "Unsplash_SharpPaperVideo_-B_lu05yfgE_0000-0001.mp4",
+    "ply": "Unsplash_SharpPaperVideo_-B_lu05yfgE_0000-0001.ply"
+  },
+  {
+    "label": "TV",
+    "image": "WildRGBD_TV_scene_000_00028_0000-0002.jpg",
+    "video": "WildRGBD_TV_scene_000_00028_0000-0002.mp4",
+    "ply": "WildRGBD_TV_scene_000_00028_0000-0002.ply"
+  }
+]
