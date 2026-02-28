@@ -115,12 +115,12 @@ export default function CreatePage() {
     <>
       <Stack
         material
-        options={{ title: 'Create World', headerShown: true }}
+        options={{ title: 'Imagining a World', headerShown: true }}
       >
-        <div className="flex flex-1 flex-col items-center gap-6 overflow-y-auto p-8">
+        <div className="flex flex-1 flex-col items-center gap-6 overflow-y-auto p-8 pt-0">
           {/* Description */}
           <div className="flex flex-col items-center gap-2 text-center">
-            <Text size="title2">Imaging a World</Text>
+            {/* <Text size="title2">Imaging a World</Text> */}
             <Text size="body" variant="secondary">
               Turn an image, a text description, or a real-world location into
               an explorable 3D environment.
@@ -130,7 +130,7 @@ export default function CreatePage() {
           {/* Mode Tabs */}
           <Material
             thickness="thinnest"
-            className="flex items-center gap-1 p-1"
+            className="flex items-center gap-1 p-1 px-4"
           >
             {/* Image tab */}
             <button
