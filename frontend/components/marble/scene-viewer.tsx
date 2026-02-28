@@ -171,6 +171,7 @@ const SceneViewer = forwardRef<SceneViewerHandle, SceneViewerProps>(
           await splatViewer.addSplatScene(plyUrl, {
             splatAlphaRemovalThreshold: 5,
             showLoadingUI: false,
+            rotation: [1, 0, 0, 0],
           })
         } catch (e) {
           console.error('Failed to load Gaussian Splat:', e)
