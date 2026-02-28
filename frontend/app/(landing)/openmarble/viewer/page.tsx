@@ -5,12 +5,62 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Stack } from '@/components/core/stack'
 import { Button } from '@/components/core/button'
 import { Text } from '@/components/core/text'
+import { Material } from '@/components/core/material'
 import { ActivityIndicator } from '@/components/activity-indicator'
 import {
   SceneViewer,
   type SceneViewerHandle,
+  type TransformMode,
 } from '@/components/marble/scene-viewer'
 import { AssetPanel } from '@/components/marble/asset-panel'
+import { cn } from '@/lib/utils'
+
+function TransformToolbar({
+  mode,
+  onModeChange,
+  hasSelection,
+}: {
+  mode: TransformMode
+  onModeChange: (mode: TransformMode) => void
+  hasSelection: boolean
+}) {
+  if (!hasSelection) return null
+
+  const modes: { key: TransformMode; label: string; shortcut: string }[] = [
+    { key: 'translate', label: 'Move', shortcut: 'W' },
+    { key: 'rotate', label: 'Rotate', shortcut: 'E' },
+    { key: 'scale', label: 'Scale', shortcut: 'R' },
+  ]
+
+  return (
+    <Material
+      thickness="thinnest"
+      className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 px-2 py-1.5"
+    >
+      {modes.map((m) => (
+        <Button
+          key={m.key}
+          variant={mode === m.key ? 'selected' : 'secondary'}
+          className="rounded-full px-3 text-sm"
+          onClick={() => onModeChange(m.key)}
+        >
+          <span>{m.label}</span>
+          <span
+            className={cn(
+              'ml-1.5 text-[10px] opacity-40',
+              mode === m.key && 'opacity-60',
+            )}
+          >
+            {m.shortcut}
+          </span>
+        </Button>
+      ))}
+      <Text size="caption2" variant="tertiary" className="ml-2 px-1">
+        Del to remove · Esc to deselect
+      </Text>
+    </Material>
+  )
+}
 
 function ViewerContent() {
   const searchParams = useSearchParams()
@@ -18,6 +68,7 @@ function ViewerContent() {
   const plyUrl = searchParams.get('ply')
   const viewerRef = useRef<SceneViewerHandle>(null)
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null)
+  const [transformMode, setTransformMode] = useState<TransformMode>('translate')
 
   const handleAddAsset = useCallback(
     (url: string, name: string, defaultScale?: number) => {
@@ -29,6 +80,11 @@ function ViewerContent() {
   const handleRemoveSelected = useCallback(() => {
     viewerRef.current?.removeSelected()
     setSelectedModelId(null)
+  }, [])
+
+  const handleModeChange = useCallback((mode: TransformMode) => {
+    setTransformMode(mode)
+    viewerRef.current?.setTransformMode(mode)
   }, [])
 
   if (!plyUrl) {
@@ -51,43 +107,51 @@ function ViewerContent() {
   }
 
   return (
-    <Stack
-      material
-      options={{
-        title: 'World Viewer',
-        headerShown: true,
-        headerLeft: (
-          <Button
-            variant="secondary"
-            className="rounded-full"
-            onClick={() => router.back()}
-          >
-            Back
-          </Button>
-        ),
-        headerRight: (
-          <Button variant="secondary" className="rounded-full" asChild>
-            <a href={plyUrl} download>
-              Download
-            </a>
-          </Button>
-        ),
-      }}
-    >
-      <div className="flex h-full overflow-hidden rounded-b-[var(--view-radius)]">
-        <SceneViewer
-          ref={viewerRef}
-          plyUrl={plyUrl}
-          className="flex-1"
-          onSelectModel={setSelectedModelId}
-        />
-        <AssetPanel
-          onAddAsset={handleAddAsset}
-          selectedModelId={selectedModelId}
-          onRemoveSelected={handleRemoveSelected}
-        />
-      </div>
-    </Stack>
+    <div className="grid h-full w-full grid-cols-[1fr_220px] gap-7">
+      <Stack
+        material
+        options={{
+          title: 'World Viewer',
+          headerShown: true,
+          headerLeft: (
+            <Button
+              variant="secondary"
+              className="rounded-full"
+              onClick={() => router.back()}
+            >
+              Back
+            </Button>
+          ),
+          headerRight: (
+            <Button variant="secondary" className="rounded-full" asChild>
+              <a href={plyUrl} download>
+                Download
+              </a>
+            </Button>
+          ),
+        }}
+      >
+        <div className="relative flex h-full overflow-hidden rounded-b-[var(--view-radius)]">
+          <SceneViewer
+            ref={viewerRef}
+            plyUrl={plyUrl}
+            className="flex-1"
+            onSelectModel={setSelectedModelId}
+            onTransformModeChange={setTransformMode}
+          />
+          <TransformToolbar
+            mode={transformMode}
+            onModeChange={handleModeChange}
+            hasSelection={selectedModelId !== null}
+          />
+        </div>
+      </Stack>
+      <AssetPanel
+        onAddAsset={handleAddAsset}
+        selectedModelId={selectedModelId}
+        onRemoveSelected={handleRemoveSelected}
+      />
+    </div>
   )
 }
 
