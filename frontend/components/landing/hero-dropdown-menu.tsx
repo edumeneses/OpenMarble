@@ -17,7 +17,7 @@ export const HeroDropdownMenu = () => {
       <DropdownMenuContent>
         {/* <DropdownMenuSeparator /> */}
         <a
-          href="https://github.com/fluid-design-io/vision-ui"
+          href="https://github.com/mohamedsobhi777/HTE_OpenMarble"
           target="_blank"
           rel="noopener noreferrer"
         >

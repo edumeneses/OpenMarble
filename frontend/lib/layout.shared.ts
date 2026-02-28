@@ -12,6 +12,6 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
     ],
-    githubUrl: 'https://github.com/fluid-design-io/vision-ui',
+    githubUrl: 'https://github.com/mohamedsobhi777/HTE_OpenMarble',
   }
 }

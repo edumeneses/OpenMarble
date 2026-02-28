@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAtom } from 'jotai'
 import { Stack } from '@/components/core/stack'
@@ -9,11 +9,15 @@ import { Text } from '@/components/core/text'
 import { Material } from '@/components/core/material'
 import { ImageUpload } from '@/components/marble/image-upload'
 import { ProcessingOverlay } from '@/components/marble/processing-overlay'
+import {
+  StreetViewInput,
+  type StreetViewInputHandle,
+} from '@/components/marble/street-view-input'
 import { currentJobAtom } from '@/lib/marble-atoms'
 import { generateWorld, generateImageFromText } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-type InputMode = 'image' | 'text'
+type InputMode = 'image' | 'text' | 'maps'
 
 export default function CreatePage() {
   const router = useRouter()
@@ -22,6 +26,8 @@ export default function CreatePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [textPrompt, setTextPrompt] = useState('')
+  const [streetViewReady, setStreetViewReady] = useState(false)
+  const streetViewRef = useRef<StreetViewInputHandle>(null)
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file)
@@ -31,6 +37,7 @@ export default function CreatePage() {
   const handleGenerate = useCallback(async () => {
     if (mode === 'image' && !selectedFile) return
     if (mode === 'text' && !textPrompt.trim()) return
+    if (mode === 'maps' && (!streetViewReady || !streetViewRef.current)) return
 
     const jobId = Date.now().toString()
     setJob({
@@ -57,11 +64,14 @@ export default function CreatePage() {
             ? { ...prev, status: 'uploading', imagePreviewUrl: image_url }
             : null,
         )
+      } else if (mode === 'maps') {
+        // Capture the current Street View frame
+        imageFile = await streetViewRef.current!.captureImage()
       } else {
         imageFile = selectedFile!
       }
 
-      // Step 3: Generate the 3D world from the image
+      // Generate the 3D world from the image
       setJob((prev) =>
         prev ? { ...prev, status: 'processing' } : null,
       )
@@ -92,10 +102,14 @@ export default function CreatePage() {
           : null,
       )
     }
-  }, [mode, selectedFile, textPrompt, previewUrl, setJob, router])
+  }, [mode, selectedFile, textPrompt, previewUrl, streetViewReady, setJob, router])
 
   const canGenerate =
-    mode === 'image' ? !!selectedFile : !!textPrompt.trim()
+    mode === 'image'
+      ? !!selectedFile
+      : mode === 'text'
+        ? !!textPrompt.trim()
+        : streetViewReady
 
   return (
     <>
@@ -108,8 +122,8 @@ export default function CreatePage() {
           <div className="flex flex-col items-center gap-2 text-center">
             <Text size="title2">Imaging a World</Text>
             <Text size="body" variant="secondary">
-              Turn an image or a text description into an explorable 3D
-              environment.
+              Turn an image, a text description, or a real-world location into
+              an explorable 3D environment.
             </Text>
           </div>
 
@@ -118,6 +132,7 @@ export default function CreatePage() {
             thickness="thinnest"
             className="flex items-center gap-1 p-1"
           >
+            {/* Image tab */}
             <button
               type="button"
               onClick={() => setMode('image')}
@@ -144,6 +159,8 @@ export default function CreatePage() {
               </svg>
               Image
             </button>
+
+            {/* Text tab */}
             <button
               type="button"
               onClick={() => setMode('text')}
@@ -169,6 +186,33 @@ export default function CreatePage() {
                 <path d="M15.1 18H3" />
               </svg>
               Text
+            </button>
+
+            {/* Maps tab */}
+            <button
+              type="button"
+              onClick={() => setMode('maps')}
+              className={cn(
+                'flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors',
+                mode === 'maps'
+                  ? 'bg-white/15 text-white'
+                  : 'text-white/50 hover:text-white/80',
+              )}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4"
+              >
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              Maps
             </button>
           </Material>
 
@@ -205,6 +249,14 @@ export default function CreatePage() {
                 className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none"
               />
             </Material>
+          )}
+
+          {/* Maps Mode */}
+          {mode === 'maps' && (
+            <StreetViewInput
+              ref={streetViewRef}
+              onLocationSet={setStreetViewReady}
+            />
           )}
 
           {/* Generate Button */}

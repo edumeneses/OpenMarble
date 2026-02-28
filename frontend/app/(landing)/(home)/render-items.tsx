@@ -58,8 +58,8 @@ export const items: ItemProps[] = [
   },
   {
     id: 'photos',
-    label: 'Photos',
-    icon: <Image src={photosIcon} alt="Photos" className={honeycombIconClassName} />,
+    label: 'Gallery',
+    icon: <Image src={photosIcon} alt="Gallery" className={honeycombIconClassName} />,
     background: <div className="h-full w-full bg-white"></div>,
     href: '/photos',
   },
@@ -68,22 +68,8 @@ export const items: ItemProps[] = [
     label: 'Source Code',
     icon: <Image src={githubIcon} alt="Github" className={honeycombIconClassName} />,
     background: <div className="h-full w-full bg-gradient-to-t from-[#060606] to-[#333b40]"></div>,
-    href: 'https://github.com/fluid-design-io/vision-ui',
-  },
-  {
-    id: 'docs',
-    label: 'API Docs',
-    icon: <Image src={docsIcon} alt="Docs" className={honeycombIconClassName} />,
-    background: <div className="h-full w-full bg-gradient-to-t from-[#FCC804] to-[#FFAC04]"></div>,
-    href: '/docs',
-  },
-  {
-    id: 'fumadocs',
-    label: 'Fumadocs',
-    icon: <Image src={fumadocsIcon} alt="Fumadocs" className={honeycombIconClassName} />,
-    background: <div className="h-full w-full bg-gradient-to-t from-[#5A5962] to-[#151515]"></div>,
-    href: 'https://fumadocs.vercel.app/',
-  },
+    href: 'https://github.com/mohamedsobhi777/HTE_OpenMarble',
+  }
 ]
 
 const rowIndexClassName = {

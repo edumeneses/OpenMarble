@@ -1,13 +1,10 @@
 'use client'
 
-import Image from 'next/image'
-import { useState } from 'react'
-import forest from '@/public/assets/demo/forest.avif'
-import { Button, ButtonGroup } from '../../../components/core/button'
+import Image, { type StaticImageData } from 'next/image'
+import { useRouter } from 'next/navigation'
+import { ButtonGroup } from '../../../components/core/button'
 import { NavigationBar, NavigationBarTitle } from '../../../components/core/navigation-bar'
-import { Toolbar } from '../../../components/core/toolbar'
 import { HeroDropdownMenu } from '../../../components/landing/hero-dropdown-menu'
-import { AspectRatio } from '../../../components/ui/aspect-ratio'
 import { Text } from '../../../components/ui/typography'
 
 import img1 from './unsplash/aaron-burden-unsplash.avif'
@@ -17,115 +14,109 @@ import img4 from './unsplash/damiano-baschiera-unsplash.avif'
 import img5 from './unsplash/dominik-schroder-unsplash.avif'
 import img6 from './unsplash/kenrick-mills-unsplash.avif'
 import img7 from './unsplash/matthew-smith-unsplash.avif'
-import img10 from './unsplash/michael-olsen-unsplash.avif'
 import img8 from './unsplash/shifaaz-shamoon-unsplash.avif'
 import img9 from './unsplash/wil-stewart-unsplash.avif'
+import img10 from './unsplash/michael-olsen-unsplash.avif'
 
-const memories = [
-  {
-    alt: 'Photo by Aaron Burden on Unsplash',
-    src: img1,
-  },
-  {
-    alt: 'Photo by Aaron Burden on Unsplash',
-    src: img2,
-  },
-  {
-    alt: 'Photo by Clement M on Unsplash',
-    src: img3,
-  },
-  {
-    alt: 'Photo by Damiano Baschiera on Unsplash',
-    src: img4,
-  },
-  {
-    alt: 'Photo by Dominik Schroder on Unsplash',
-    src: img5,
-  },
-  {
-    alt: 'Photo by Kenrick Mills on Unsplash',
-    src: img6,
-  },
-  {
-    alt: 'Photo by Matthew Smith on Unsplash',
-    src: img7,
-  },
-  {
-    alt: 'Photo by Shifaaz Shamoon on Unsplash',
-    src: img8,
-  },
-  {
-    alt: 'Photo by Wil Stewart on Unsplash',
-    src: img9,
-  },
-  {
-    alt: 'Photo by Michael Olsen on Unsplash',
-    src: img10,
-  },
-]
+interface World {
+  id: string
+  name: string
+  thumbnail: StaticImageData
+  /** PLY file URL — empty string until real worlds are generated */
+  plyUrl: string
+}
 
-const MemoriesView = () => {
+const WORLDS_BY_CATEGORY: Record<string, World[]> = {
+  stylized: [
+    { id: 'stylized-1', name: 'Neon Alley', thumbnail: img1, plyUrl: '' },
+    { id: 'stylized-2', name: 'Watercolor Gardens', thumbnail: img6, plyUrl: '' },
+  ],
+  interior: [
+    { id: 'interior-1', name: 'Cozy Loft', thumbnail: img2, plyUrl: '' },
+    { id: 'interior-2', name: 'Warm Studio', thumbnail: img7, plyUrl: '' },
+  ],
+  exterior: [
+    { id: 'exterior-1', name: 'Misty Valley', thumbnail: img3, plyUrl: '' },
+    { id: 'exterior-2', name: 'Sunset Cliffs', thumbnail: img4, plyUrl: '' },
+    { id: 'exterior-3', name: 'Alpine Meadow', thumbnail: img5, plyUrl: '' },
+  ],
+  fantasy: [
+    { id: 'fantasy-1', name: 'Crystal Lagoon', thumbnail: img8, plyUrl: '' },
+    { id: 'fantasy-2', name: 'Enchanted Forest', thumbnail: img9, plyUrl: '' },
+  ],
+  'sci-fi': [
+    { id: 'scifi-1', name: 'Orbital Station', thumbnail: img10, plyUrl: '' },
+    { id: 'scifi-2', name: 'Quantum Lab', thumbnail: img1, plyUrl: '' },
+  ],
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  stylized: 'Stylized',
+  interior: 'Interior',
+  exterior: 'Exterior',
+  fantasy: 'Fantasy',
+  'sci-fi': 'Sci-Fi',
+}
+
+function WorldGrid({ category }: { category: string }) {
+  const router = useRouter()
+  const worlds = WORLDS_BY_CATEGORY[category] ?? []
+  const label = CATEGORY_LABELS[category] ?? category
+
   return (
     <>
       <NavigationBar>
         <div />
-        <NavigationBarTitle reveal>Memories</NavigationBarTitle>
+        <NavigationBarTitle>{label}</NavigationBarTitle>
         <ButtonGroup>
           <HeroDropdownMenu />
         </ButtonGroup>
       </NavigationBar>
-      <div className="relative">
-        <div className="absolute inset-0 mx-auto flex items-center justify-center">
-          <Text
-            variant="default"
-            size="XLTitle1"
-            className="[text-shadow:0_0_10px_hsl(var(--background)/0.1)]"
-            asChild
-          >
-            <h1>Vision UI</h1>
+
+      {worlds.length === 0 ? (
+        <div className="flex h-48 items-center justify-center">
+          <Text variant="tertiary" size="callout">
+            No worlds yet in this category
           </Text>
         </div>
-        <Image
-          src={forest}
-          alt={'A small boat of fisherman in Fuvahmulah, Maldives heading out for the days work.'}
-          className="h-[25vw] w-full object-cover"
-        />
-      </div>
-      <div className="mb-36 grid grid-cols-5">
-        {memories.map((memory, index) => (
-          <AspectRatio ratio={1 / 1} key={`memory-${index}`}>
-            <Image src={memory.src} alt={memory.alt} className="h-full w-full object-cover" />
-          </AspectRatio>
-        ))}
-      </div>
+      ) : (
+        <div className="mb-10 grid grid-cols-2 gap-3 px-4 py-4">
+          {worlds.map((world) => (
+            <button
+              key={world.id}
+              onClick={() =>
+                router.push(
+                  world.plyUrl
+                    ? `/openmarble/viewer?ply=${encodeURIComponent(world.plyUrl)}`
+                    : '/openmarble/viewer',
+                )
+              }
+              className="group relative overflow-hidden rounded-2xl bg-white/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none"
+            >
+              <div className="relative aspect-[4/3]">
+                <Image
+                  src={world.thumbnail}
+                  alt={world.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="truncate text-sm font-semibold text-white drop-shadow">
+                    {world.name}
+                  </p>
+                  {!world.plyUrl && (
+                    <p className="mt-0.5 text-[10px] font-medium text-white/50">Coming soon</p>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </>
   )
 }
 
-const MemoriesToolbar = () => {
-  const [activeTab, setActiveTab] = useState<'year' | 'month' | 'all'>('all')
-  return (
-    <Toolbar>
-      <Button
-        variant={activeTab === 'year' ? 'default' : 'secondary'}
-        onClick={() => setActiveTab('year')}
-      >
-        Year
-      </Button>
-      <Button
-        variant={activeTab === 'month' ? 'default' : 'secondary'}
-        onClick={() => setActiveTab('month')}
-      >
-        Month
-      </Button>
-      <Button
-        variant={activeTab === 'all' ? 'default' : 'secondary'}
-        onClick={() => setActiveTab('all')}
-      >
-        All
-      </Button>
-    </Toolbar>
-  )
-}
-
-export { MemoriesView, MemoriesToolbar }
+export { WorldGrid }
