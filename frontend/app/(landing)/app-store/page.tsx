@@ -1,7 +1,9 @@
 import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
-import { Button } from '@/components/core/button'
+import { Button, ButtonGroup } from '@/components/core/button'
 import { Hoverable } from '@/components/core/hoverable'
+import { NavigationBar, NavigationBarTitle } from '@/components/core/navigation-bar'
+import { HeroDropdownMenu } from '@/components/landing/hero-dropdown-menu'
 import { Text } from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
 import acmeSky from '@/public/assets/acme-sky.jpg'
@@ -10,6 +12,12 @@ export default function AppStorePage() {
   return (
     <>
       <div className="relative isolate mb-4 flex-1">
+        <NavigationBar className="sticky">
+          <NavigationBarTitle variant="leading">Apps & Games</NavigationBarTitle>
+          <ButtonGroup>
+            <HeroDropdownMenu />
+          </ButtonGroup>
+        </NavigationBar>
         <Image
           src={acmeSky}
           alt="Acme Sky"

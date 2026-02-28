@@ -3,7 +3,10 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import forest from '@/public/assets/demo/forest.avif'
-import { Button } from '../../../components/core/button'
+import { Button, ButtonGroup } from '../../../components/core/button'
+import { NavigationBar, NavigationBarTitle } from '../../../components/core/navigation-bar'
+import { Toolbar } from '../../../components/core/toolbar'
+import { HeroDropdownMenu } from '../../../components/landing/hero-dropdown-menu'
 import { AspectRatio } from '../../../components/ui/aspect-ratio'
 import { Text } from '../../../components/ui/typography'
 
@@ -64,6 +67,13 @@ const memories = [
 const MemoriesView = () => {
   return (
     <>
+      <NavigationBar>
+        <div />
+        <NavigationBarTitle reveal>Memories</NavigationBarTitle>
+        <ButtonGroup>
+          <HeroDropdownMenu />
+        </ButtonGroup>
+      </NavigationBar>
       <div className="relative">
         <div className="absolute inset-0 mx-auto flex items-center justify-center">
           <Text
@@ -95,7 +105,7 @@ const MemoriesView = () => {
 const MemoriesToolbar = () => {
   const [activeTab, setActiveTab] = useState<'year' | 'month' | 'all'>('all')
   return (
-    <div>
+    <Toolbar>
       <Button
         variant={activeTab === 'year' ? 'default' : 'secondary'}
         onClick={() => setActiveTab('year')}
@@ -114,7 +124,7 @@ const MemoriesToolbar = () => {
       >
         All
       </Button>
-    </div>
+    </Toolbar>
   )
 }
 

@@ -54,14 +54,14 @@ export const items: ItemProps[] = [
     label: 'App Store',
     icon: <Image src={appStoreIcon} alt="App Store" className={honeycombIconClassName} />,
     background: <div className="h-full w-full bg-gradient-to-t from-blue-600 to-sky-400"></div>,
-    href: '#app-store', // TODO: add back the page
+    href: '/app-store',
   },
   {
     id: 'photos',
     label: 'Photos',
     icon: <Image src={photosIcon} alt="Photos" className={honeycombIconClassName} />,
     background: <div className="h-full w-full bg-white"></div>,
-    href: '#photos', // TODO: add back the page
+    href: '/photos',
   },
   {
     id: 'github',
