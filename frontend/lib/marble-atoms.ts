@@ -2,7 +2,7 @@ import { atom } from 'jotai'
 
 export interface GenerationJob {
   id: string
-  status: 'uploading' | 'processing' | 'completed' | 'error'
+  status: 'imagining' | 'uploading' | 'processing' | 'completed' | 'error'
   imagePreviewUrl?: string
   plyUrl?: string
   videoUrl?: string

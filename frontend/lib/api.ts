@@ -54,6 +54,21 @@ export async function fetchGallery() {
   }>
 }
 
+export async function generateImageFromText(prompt: string) {
+  const res = await fetch('/api/imagine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(error.error || 'Image generation failed')
+  }
+
+  return res.json() as Promise<{ image_url: string }>
+}
+
 export function getSuperSplatViewerUrl(plyUrl: string): string {
   return `${SUPERSPLAT_URL}/?load=${encodeURIComponent(plyUrl)}`
 }

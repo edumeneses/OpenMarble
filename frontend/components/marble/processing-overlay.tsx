@@ -12,7 +12,7 @@ interface ProcessingOverlayProps {
 
 export function ProcessingOverlay({ job }: ProcessingOverlayProps) {
   const isActive =
-    job && (job.status === 'uploading' || job.status === 'processing')
+    job && (job.status === 'imagining' || job.status === 'uploading' || job.status === 'processing')
 
   return (
     <AnimatePresence>
@@ -34,9 +34,11 @@ export function ProcessingOverlay({ job }: ProcessingOverlayProps) {
               <ActivityIndicator className="size-10 text-white" />
             </motion.div>
             <Text size="title3">
-              {job.status === 'uploading'
-                ? 'Uploading image...'
-                : 'Generating 3D world...'}
+              {job.status === 'imagining'
+                ? 'Imagining your world...'
+                : job.status === 'uploading'
+                  ? 'Uploading image...'
+                  : 'Generating 3D world...'}
             </Text>
             <Text size="caption1" variant="secondary">
               This may take a minute
