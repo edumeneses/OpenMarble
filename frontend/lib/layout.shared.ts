@@ -12,6 +12,6 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
     ],
-    githubUrl: 'https://github.com/mohamedsobhi777/HTE_OpenMarble',
+    githubUrl: 'https://github.com/edumeneses/Diorama',
   }
 }

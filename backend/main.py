@@ -7,8 +7,14 @@ Run with:
 
 from __future__ import annotations
 
+import copy
+import json
 import logging
+import os
 import shutil
+import signal
+import subprocess
+import time
 import traceback
 import uuid
 from pathlib import Path
@@ -37,6 +43,28 @@ OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
+
+# ---------------------------------------------------------------------------
+# FlashWorld (engine #3) — a 3DGS scene generator run as a detached, per-job
+# subprocess rather than a persistent HTTP service. A scene takes ~13 min and
+# the model needs the whole 16GB GPU, so it cannot coexist with SHARP/WorldGen
+# and cannot fit inside a synchronous HTTP request. Instead /api/generate
+# launches the job and returns a job id; the frontend polls /api/jobs/{id}.
+FLASHWORLD_DIR = Path("/media/Storage/FlashWorld")
+FLASHWORLD_PYTHON = FLASHWORLD_DIR / ".venv/bin/python"
+FLASHWORLD_TEMPLATE = Path(__file__).resolve().parent / "flashworld_template.json"
+FLASHWORLD_JOBS_DIR = Path(__file__).resolve().parent / "flashworld_jobs"
+FLASHWORLD_JOBS_DIR.mkdir(parents=True, exist_ok=True)
+# .env.storage keeps HF/torch caches on the big disk (root is near full).
+ENV_STORAGE = Path("/media/Storage/OpenMarble/.env.storage")
+
+# In-memory job registry. Lost on restart — acceptable for a single-box dev
+# tool; the .ply files themselves survive in OUTPUTS_DIR and show in the
+# gallery. Maps job_id -> dict(status, pid, ply_src, video_src, thumbnail, log).
+JOBS: dict[str, dict] = {}
+# FlashWorld is single-GPU; serialize its jobs. Holds the job_id currently
+# occupying the GPU, or None.
+_flashworld_active: str | None = None
 
 # ---------------------------------------------------------------------------
 # App
@@ -138,6 +166,200 @@ async def _generate_worldgen(
     )
 
 
+def _storage_env() -> dict:
+    """Base env for FlashWorld: inherit ours, overlay .env.storage exports and
+    the CUDA allocator hint that keeps 16GB fragmentation in check."""
+    env = dict(os.environ)
+    env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    if ENV_STORAGE.exists():
+        for line in ENV_STORAGE.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            line = line.removeprefix("export ").strip()
+            if "=" in line:
+                key, _, val = line.partition("=")
+                env[key.strip()] = val.strip().strip('"').strip("'")
+    return env
+
+
+def _launch_flashworld(
+    upload_path: Path, upload_id: str, ext: str, prompt: str
+) -> JSONResponse:
+    """Build a FlashWorld job input and spawn cli.py detached. Returns
+    immediately with status=processing; the client polls /api/jobs/{id}."""
+    global _flashworld_active
+
+    # Reject if another FlashWorld job still owns the GPU.
+    if _flashworld_active and _flashworld_active in JOBS:
+        active = JOBS[_flashworld_active]
+        if active["status"] == "processing" and _proc_alive(active.get("pid")):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "FlashWorld is busy with another scene "
+                    f"(job {_flashworld_active}). Try again when it finishes."
+                ),
+            )
+
+    if not FLASHWORLD_PYTHON.exists():
+        raise HTTPException(
+            status_code=503,
+            detail=f"FlashWorld venv not found at {FLASHWORLD_PYTHON}",
+        )
+
+    job_dir = FLASHWORLD_JOBS_DIR / upload_id
+    input_dir = job_dir / "input"
+    output_dir = job_dir / "output"
+    input_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # FlashWorld accepts image_prompt as a filesystem path, so copy the upload
+    # into the job dir (the transient /uploads file is deleted after this call).
+    image_dest = job_dir / f"source{ext}"
+    shutil.copy2(upload_path, image_dest)
+
+    # Reuse the canonical 24-camera trajectory; the model rescales intrinsics
+    # to the input image, so only the image + text prompt change per job.
+    scene = json.loads(FLASHWORLD_TEMPLATE.read_text())
+    scene["image_prompt"] = str(image_dest)
+    scene["text_prompt"] = prompt or ""
+    # cli.py names the output subdir after the json stem.
+    (input_dir / "scene.json").write_text(json.dumps(scene))
+
+    log_path = job_dir / "run.log"
+    cmd = [
+        str(FLASHWORLD_PYTHON), "cli.py",
+        "--input_dir", str(input_dir),
+        "--output_dir", str(output_dir),
+        "--offload_t5", "--offload_vae",  # required on 16GB
+        "--ply", "--video",
+    ]
+    logger.info("[flashworld] launching job %s: %s", upload_id, " ".join(cmd))
+    with open(log_path, "wb") as log_f:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(FLASHWORLD_DIR),
+            env=_storage_env(),
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,  # detach: survives if this request dies
+        )
+
+    # Persist a thumbnail immediately so the gallery/preview has the source.
+    thumbnail_filename = f"{upload_id}{ext}"
+    shutil.copy2(upload_path, OUTPUTS_DIR / thumbnail_filename)
+
+    JOBS[upload_id] = {
+        "status": "processing",
+        "engine": "flashworld",
+        "pid": proc.pid,
+        "ply_src": output_dir / "scene" / "gaussians.ply",
+        "video_src": output_dir / "scene" / "video.mp4",
+        "log": log_path,
+        "ext": ext,
+        "thumbnail_filename": thumbnail_filename,
+        "started": time.time(),
+    }
+    _flashworld_active = upload_id
+
+    return JSONResponse(
+        {
+            "id": upload_id,
+            "engine": "flashworld",
+            "status": "processing",
+            "job_id": upload_id,
+            "poll_url": f"http://localhost:8000/api/jobs/{upload_id}",
+        }
+    )
+
+
+def _proc_alive(pid: int | None) -> bool:
+    if not pid:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False  # no such process → dead
+    except PermissionError:
+        return True  # exists but owned by another user → alive
+    except OSError:
+        return False
+    return True
+
+
+def _publish_flashworld(job_id: str, job: dict) -> dict:
+    """Copy a finished job's .ply/.mp4 into OUTPUTS_DIR and build the result."""
+    ply_filename = f"{job_id}.ply"
+    shutil.copy2(job["ply_src"], OUTPUTS_DIR / ply_filename)
+
+    video_url = None
+    if job["video_src"].exists():
+        video_filename = f"{job_id}.mp4"
+        shutil.copy2(job["video_src"], OUTPUTS_DIR / video_filename)
+        video_url = f"http://localhost:8000/files/{video_filename}"
+
+    thumbnail_url = f"http://localhost:8000/files/{job['thumbnail_filename']}"
+    result = {
+        "id": job_id,
+        "engine": "flashworld",
+        "status": "completed",
+        "ply_url": f"http://localhost:8000/files/{ply_filename}",
+        "ply_filename": ply_filename,
+        "video_url": video_url,
+        "thumbnail_url": thumbnail_url,
+    }
+    job.update(status="completed", result=result)
+    return result
+
+
+@app.get("/api/jobs/{job_id}")
+async def job_status(job_id: str):
+    """Poll a FlashWorld job. Lazily publishes output the first time the .ply
+    appears, so no background loop is needed."""
+    global _flashworld_active
+    job = JOBS.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Unknown job: {job_id}")
+
+    if job["status"] == "completed":
+        return JSONResponse(job["result"])
+    if job["status"] == "error":
+        return JSONResponse(
+            {"id": job_id, "engine": "flashworld", "status": "error",
+             "detail": job.get("detail", "unknown error")},
+            status_code=200,
+        )
+
+    # Still marked processing — resolve the real state.
+    if job["ply_src"].exists():
+        if _flashworld_active == job_id:
+            _flashworld_active = None
+        logger.info("[flashworld] job %s produced ply — publishing", job_id)
+        return JSONResponse(_publish_flashworld(job_id, job))
+
+    if not _proc_alive(job.get("pid")):
+        # Process gone without a .ply → failed. Surface the log tail.
+        if _flashworld_active == job_id:
+            _flashworld_active = None
+        tail = ""
+        if job["log"].exists():
+            tail = job["log"].read_text(errors="replace")[-1500:]
+        job.update(status="error", detail=f"FlashWorld exited without output.\n{tail}")
+        logger.error("[flashworld] job %s failed. Log tail:\n%s", job_id, tail)
+        return JSONResponse(
+            {"id": job_id, "engine": "flashworld", "status": "error",
+             "detail": job["detail"]},
+            status_code=200,
+        )
+
+    elapsed = int(time.time() - job["started"])
+    return JSONResponse(
+        {"id": job_id, "engine": "flashworld", "status": "processing",
+         "elapsed_seconds": elapsed}
+    )
+
+
 @app.post("/api/generate")
 async def generate(
     image: UploadFile = File(...),
@@ -151,10 +373,10 @@ async def generate(
     fps: int = 30,
     output_resolution: int = 0,
 ):
-    if engine not in ("sharp", "worldgen"):
+    if engine not in ("sharp", "worldgen", "flashworld"):
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown engine: {engine}. Allowed: sharp, worldgen",
+            detail=f"Unknown engine: {engine}. Allowed: sharp, worldgen, flashworld",
         )
 
     ext = Path(image.filename or "upload.png").suffix.lower()
@@ -176,6 +398,10 @@ async def generate(
 
         if engine == "worldgen":
             return await _generate_worldgen(upload_path, upload_id, ext, prompt, pano, format)
+
+        if engine == "flashworld":
+            # Long (~13 min) GPU job — launch detached and return a job id.
+            return _launch_flashworld(upload_path, upload_id, ext, prompt)
 
         # Call the Gradio app's run_sharp function
         # Inputs: [image_in, trajectory, output_res, frames, fps_in, render_toggle]

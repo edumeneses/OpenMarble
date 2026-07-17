@@ -13,7 +13,32 @@ export async function checkHealth() {
   }>
 }
 
-export type Engine = 'sharp' | 'worldgen'
+export type Engine = 'sharp' | 'worldgen' | 'flashworld'
+
+type GenerationResult = {
+  id: string
+  ply_url: string
+  ply_filename: string
+  video_url: string | null
+  thumbnail_url: string | null
+}
+
+// FlashWorld runs as a long (~13 min) detached job: the POST returns a job id
+// immediately and we poll until the .ply is ready.
+async function pollJob(pollUrl: string): Promise<GenerationResult> {
+  while (true) {
+    await new Promise((r) => setTimeout(r, 5000))
+    const res = await fetch(pollUrl)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Job poll failed' }))
+      throw new Error(err.detail || 'Job poll failed')
+    }
+    const data = await res.json()
+    if (data.status === 'completed') return data as GenerationResult
+    if (data.status === 'error') throw new Error(data.detail || 'Generation failed')
+    // else still processing — keep polling
+  }
+}
 
 export async function generateWorld(
   imageFile: File,
@@ -42,13 +67,13 @@ export async function generateWorld(
     throw new Error(error.detail || 'Generation failed')
   }
 
-  return res.json() as Promise<{
-    id: string
-    ply_url: string
-    ply_filename: string
-    video_url: string | null
-    thumbnail_url: string | null
-  }>
+  const data = await res.json()
+  // Async engines (FlashWorld) return a job to poll; sync engines return the
+  // finished result directly.
+  if (data.status === 'processing' && data.poll_url) {
+    return pollJob(data.poll_url)
+  }
+  return data as GenerationResult
 }
 
 export async function fetchGallery() {

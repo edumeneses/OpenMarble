@@ -57,7 +57,7 @@ export default function GalleryPage() {
             <Button
               variant="primary"
               className="rounded-full px-6"
-              onClick={() => router.push('/openmarble')}
+              onClick={() => router.push('/diorama')}
             >
               Create a World
             </Button>
@@ -72,7 +72,7 @@ export default function GalleryPage() {
                 type="button"
                 onClick={() =>
                   router.push(
-                    `/openmarble/viewer?ply=${encodeURIComponent(item.ply_url)}${
+                    `/diorama/viewer?ply=${encodeURIComponent(item.ply_url)}${
                       // SHARP generations have a preview video; WorldGen 360°
                       // worlds don't — open those in inside-the-world mode.
                       item.video_url ? '' : '&mode=world'

@@ -24,6 +24,24 @@ import { cn } from '@/lib/utils'
 
 type InputMode = 'image' | 'text' | 'maps' | 'url'
 
+// Generation engines surfaced in the selector. `soon` engines are shown but
+// not yet wired into the backend (/api/generate only routes sharp + worldgen),
+// so their buttons are disabled until integrated.
+type EngineOption = {
+  id: Engine | 'flashworld' | 'matrix3d'
+  title: string
+  model: string
+  timing: string
+  soon?: boolean
+}
+
+const ENGINE_OPTIONS: EngineOption[] = [
+  { id: 'sharp', title: '3D Photo', model: 'SHARP', timing: '~15 s' },
+  { id: 'worldgen', title: '360° World', model: 'WorldGen', timing: '~1 min' },
+  { id: 'flashworld', title: 'Walkable Scene', model: 'FlashWorld', timing: '~13 min' },
+  { id: 'matrix3d', title: 'Explorable World', model: 'Matrix-3D', timing: '~30 min', soon: true },
+]
+
 export default function CreatePage() {
   const router = useRouter()
   const [job, setJob] = useAtom(currentJobAtom)
@@ -114,8 +132,8 @@ export default function CreatePage() {
           : null,
       )
       router.push(
-        `/openmarble/viewer?ply=${encodeURIComponent(result.ply_url)}${
-          engine === 'worldgen' ? '&mode=world' : ''
+        `/diorama/viewer?ply=${encodeURIComponent(result.ply_url)}${
+          engine === 'worldgen' || engine === 'flashworld' ? '&mode=world' : ''
         }`,
       )
     } catch (error) {
@@ -356,34 +374,37 @@ export default function CreatePage() {
           {/* Engine Selector */}
           <Material
             thickness="thinnest"
-            className="flex items-center gap-1 p-1 px-4"
+            className="flex flex-wrap items-center justify-center gap-1 p-1 px-4"
           >
-            <button
-              type="button"
-              onClick={() => setEngine('sharp')}
-              className={cn(
-                'flex flex-col items-center rounded-full px-5 py-2 transition-colors',
-                engine === 'sharp'
-                  ? 'bg-white/15 text-white'
-                  : 'text-white/50 hover:text-white/80',
-              )}
-            >
-              <span className="text-sm font-medium">3D Photo</span>
-              <span className="text-xs opacity-60">SHARP · ~15 s</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setEngine('worldgen')}
-              className={cn(
-                'flex flex-col items-center rounded-full px-5 py-2 transition-colors',
-                engine === 'worldgen'
-                  ? 'bg-white/15 text-white'
-                  : 'text-white/50 hover:text-white/80',
-              )}
-            >
-              <span className="text-sm font-medium">360° World</span>
-              <span className="text-xs opacity-60">WorldGen · ~1 min</span>
-            </button>
+            {ENGINE_OPTIONS.map((opt) => {
+              const active = !opt.soon && engine === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={opt.soon}
+                  onClick={() => !opt.soon && setEngine(opt.id as Engine)}
+                  className={cn(
+                    'relative flex flex-col items-center rounded-full px-5 py-2 transition-colors',
+                    opt.soon
+                      ? 'cursor-not-allowed text-white/25'
+                      : active
+                        ? 'bg-white/15 text-white'
+                        : 'text-white/50 hover:text-white/80',
+                  )}
+                >
+                  <span className="text-sm font-medium">{opt.title}</span>
+                  <span className="text-xs opacity-60">
+                    {opt.model} · {opt.timing}
+                  </span>
+                  {opt.soon && (
+                    <span className="absolute -top-1 -right-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/50">
+                      Soon
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </Material>
 
           {/* Generate Button */}

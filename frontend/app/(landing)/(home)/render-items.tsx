@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Text } from '@/components/core'
 import type { ListRenderItemInfo } from '@/components/core/grid-layout'
-import OpenMarbleIcon from '@/components/icons/openmarble'
+import DioramaIcon from '@/components/icons/diorama'
 import { cn } from '@/lib/utils'
 import appStoreIcon from '@/public/assets/landing/home/icon-app-store.avif'
 import docsIcon from '@/public/assets/landing/home/icon-docs.avif'
@@ -29,17 +29,17 @@ interface ItemProps {
 
 export const items: ItemProps[] = [
   {
-    id: 'openmarble',
-    label: 'OpenMarble',
+    id: 'diorama',
+    label: 'Diorama',
     icon: (
-      <OpenMarbleIcon
+      <DioramaIcon
         className={cn(honeycombIconClassName, 'p-5 text-white')}
       />
     ),
     background: (
       <div className="h-full w-full bg-gradient-to-t from-indigo-600 to-purple-400" />
     ),
-    href: '/openmarble',
+    href: '/diorama',
   },
   {
     id: 'app-store',
@@ -60,7 +60,7 @@ export const items: ItemProps[] = [
     label: 'Source Code',
     icon: <Image src={githubIcon} alt="Github" className={honeycombIconClassName} />,
     background: <div className="h-full w-full bg-gradient-to-t from-[#060606] to-[#333b40]"></div>,
-    href: 'https://github.com/mohamedsobhi777/HTE_OpenMarble',
+    href: 'https://github.com/edumeneses/Diorama',
   }
 ]
 

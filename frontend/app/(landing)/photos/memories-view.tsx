@@ -123,8 +123,8 @@ function WorldGrid({ category }: { category: string }) {
               onOpen={() =>
                 router.push(
                   world.id
-                    ? `/openmarble/viewer?ply=${encodeURIComponent(`${BACKEND_URL}/files/${world.id}.ply`)}`
-                    : '/openmarble/viewer',
+                    ? `/diorama/viewer?ply=${encodeURIComponent(`${BACKEND_URL}/files/${world.id}.ply`)}`
+                    : '/diorama/viewer',
                 )
               }
             />

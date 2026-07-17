@@ -31,7 +31,7 @@ export default function EnvironmentsPage() {
 
   const renderCell = useCallback(
     makeRenderCell((item) =>
-      router.push(`/openmarble/viewer?ply=${encodeURIComponent(item.plyUrl)}`),
+      router.push(`/diorama/viewer?ply=${encodeURIComponent(item.plyUrl)}`),
     ),
     [router],
   )

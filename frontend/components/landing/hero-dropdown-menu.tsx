@@ -17,7 +17,7 @@ export const HeroDropdownMenu = () => {
       <DropdownMenuContent>
         {/* <DropdownMenuSeparator /> */}
         <a
-          href="https://github.com/mohamedsobhi777/HTE_OpenMarble"
+          href="https://github.com/edumeneses/Diorama"
           target="_blank"
           rel="noopener noreferrer"
         >

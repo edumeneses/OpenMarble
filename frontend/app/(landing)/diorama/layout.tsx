@@ -4,7 +4,7 @@ import { WindowControls } from '@/components/core/window-control'
 const tabs: OrnamentTabProps[] = [
   {
     name: 'Create',
-    href: '/openmarble',
+    href: '/diorama',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +25,7 @@ const tabs: OrnamentTabProps[] = [
   },
   {
     name: 'Gallery',
-    href: '/openmarble/gallery',
+    href: '/diorama/gallery',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +47,7 @@ const tabs: OrnamentTabProps[] = [
   },
 ]
 
-export default function OpenMarbleLayout({
+export default function DioramaLayout({
   children,
 }: {
   children: React.ReactNode

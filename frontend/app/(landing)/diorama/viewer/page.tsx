@@ -103,7 +103,7 @@ function ViewerContent() {
           <Button
             variant="primary"
             className="rounded-full px-6"
-            onClick={() => router.push('/openmarble')}
+            onClick={() => router.push('/diorama')}
           >
             Create World
           </Button>
